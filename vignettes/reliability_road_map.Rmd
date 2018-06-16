@@ -1,0 +1,264 @@
+---
+title: "Package Introduction"
+author: "Leonardo Marques"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  fig.width=8,
+  fig.height=6,
+  fig.caption=TRUE,
+  comment = "#>",
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+
+### Relaibility Analysis.
+Reliability describes the ability of a system, component or equipment to function under stated conditions for a specified period of time. Theoreticaly, reliability is defined as the probability of success ($1-Probability\ Of\ Failure$) and is estimated with the use of survival analysis.
+
+The basic Steps of a reliability analysis are:
+
+- Get the data
+
+- Prepare the data
+
+- Fit the model
+
+- Check model goodness of fit
+
+- Interpret the results.
+
+
+
+But first, let´s load necessary libraries.
+
+```{r}
+
+library(flexsurv) 
+library(tidyverse)
+library(data.table)
+library(lubridate)
+library(stringr)
+library(scales)
+library(grid)
+library(sqldf)
+
+# library(reliabilitytools)
+w_ = list.files("/Users/leo/Documents/Estudos/R/my_packages/reliabilitytools/R"
+           , full.names = TRUE) %>%
+  lapply(source)
+
+```
+
+
+
+
+#### Get the data
+The first step is to get the data. In our scenario we have a SQLite3 database from which we will get the data. 
+
+```{r}
+
+data_base = 'C:/Leonardo/Projetos R/my_R_packages/reliabilitytools/inst/extdata/example_data.db'
+
+data_base = "/Users/leo/Documents/Estudos/R/my_packages/reliabilitytools/inst/extdata/example_data.db"
+
+
+da = sqldf('
+SELECT  *
+, substr(assembly_date,1,4) year
+, substr(assembly_date,6,2) month
+
+FROM failures 
+WHERE year = "2010"
+AND month = "01"
+
+', dbname = data_base)
+
+da %>%
+  select(id, cycles, failure_cause, failure_cause_group, failure_date) %>%
+  head()
+
+
+```
+
+The data set has the columns:
+
+  - **id**: identification of the unit/individual.
+  - **cycles**: the time at wich the unit/individual has failed.
+  - **failure_cause**: The code of the component that failed.
+  - **failure_cause_group**: Component group. Components may be grouped according the their function and/or system they belong to.
+  - **assembly_date**: When the unit was assembled.
+  - **failure_date**: The date the failure has occourred.
+  - **year**, **month**: Year and month of assenbly.
+
+#### Prepare the data.
+
+In order to perform survival/reliability analysis the data has to be properly prepared, which consists of classifying the events into failure or suspenstion/censor.
+
+The plot  \ref{fig:hist_data} below shows the failure history of 4 units. Unit **B** Had a failure of causes 999, 177 and 818.
+
+```{r, fig.cap="\\label{fig:hist_data}Historical Data"}
+da %>%
+  # - add a time = 0
+  (function(x)
+    rbind(x
+          , unique(x, by = 'id') %>%
+            mutate(cycles=0
+                   , failure_cause_group = 'built')
+    )
+  )%>%
+  arrange(id) %>%
+  filter(id %in% unique(.$id)[2:5] )%>%
+  mutate(id = factor(id, labels = LETTERS[1:length(unique(id))])) %>%
+  ggplot(aes(x = cycles
+             # , y = id
+             , y = reorder(id, -cycles)
+             , group = id))+
+  geom_line()+
+  geom_point(aes(col = failure_cause_group), size = 2)+
+  geom_label(aes(label=failure_cause_group),nudge_y=0.3, size=2 )+
+  labs(title = 'Raw Data: Equipment history.'
+       , subtitle = 'All failures that have occurred with 4 equipments.'
+       , x = 'cycles', y='')+
+  theme(axis.text.x=element_text(angle=0, vjust=.5, size = 13, hjust=1)
+        ,panel.grid.major.x = element_line(colour="gray", size=0.3)
+        , panel.grid.minor.x = element_blank()
+        , panel.grid.minor.y = element_blank()
+        , panel.grid.major.y = element_blank()
+        , legend.position="bottom"
+        # ,axis.text.y = element_blank()
+  )
+```
+
+In this example, the data is the failure history of equipment. But usually we are interested in a specific failure, say failure cause group number 560. So we need to split the events into "suspensions" and "failures", where events of cause group 560 are classified as failures and the other causes will be classified as suspension. The function `prepare_life_times` helps us do that.
+
+
+```{r}
+
+# -- define failures
+da_prepared = da %>%
+  mutate(status = as.integer(failure_cause_group == 560))
+
+# -- prepare life data
+da_prepared = prepare_life_times(da_prepared
+                                 , indiv_col = 'id'
+                                 , status_col = 'status'
+                                 , obs_time_col = 'cycles')
+# -- Plot
+da_prepared %>%
+  mutate(status_2 = factor(status, levels = 0:1, labels = c('suspension', 'failure'))) %>%
+  # - add a time = 0
+  (function(x)
+    rbind(x
+          , unique(x, by = 'id') %>%
+            mutate(cycles=0
+                   , failure_cause_group = 'built')
+          
+          
+    ))%>%
+  arrange(id) %>%
+  filter(id %in% unique(.$id)[2:5] )%>%
+  mutate(id = factor(id, labels = LETTERS[1:length(unique(id))])) %>%
+  ggplot(aes(x = cycles
+             # , y = id
+             , y = reorder(id, -cycles)
+             , group = id))+
+  geom_line()+
+  geom_point(aes(col = status_2), size = 2)+
+  labs(title = 'Prepared Data: Equipment history.'
+       , subtitle = 'Events classified as failure or suspension'
+       , x = 'cycles', y='')+
+  theme(axis.text.x=element_text(angle=0, vjust=.5, size = 13, hjust=1)
+        ,panel.grid.major.x = element_line(colour="gray", size=0.3)
+        , panel.grid.minor.x = element_blank()
+        , panel.grid.minor.y = element_blank()
+        , panel.grid.major.y = element_blank()
+        , legend.position="bottom"
+        # ,axis.text.y = element_blank()
+  )
+
+```
+
+Note that only suspenstios that happened after a failure are considered in the estimation. This is because we are considering that once a unit fails it is repaired and the replaced component is brand new, thus the time (cycles) is restarted. 
+
+#### Fit the model
+Once the data is prepared the model can be fit.`multi_surv_reg` tried some distributions and returns the fits ordered according to best fit quality measures in the list `models`.
+
+```{r}
+
+surv_model = multi_surv_reg(da_prepared
+                            , time_col = 'elapsed'
+                            , status_col = 'status'
+)
+
+plot_life_curve(surv_model)
+
+```
+
+
+#### Check model goodness of fit.
+
+Checking the models goodness of fit (GoF) is pretty straightforward in our case. The curve that best approximates the points is the log logistic. The `multi_surv_reg` function returns the the models in the object `models` ordered by best fit. The GoF table can be found in the object `surv_model$Adjust_table`.
+
+  - **fit_mse**: The mean squared error of the linear model $S_{km} \sim S_{model}$
+  - **mse**: average of the squared difference between $S_{km} - S_{model}$
+  - **rho_KM_flex**: correlation between $S_{km} $ and $S_{model}$
+  - **loglik**: log likelihood of the model
+  - **fit**: the `lm` object of the model $S_{km} \sim S_{model}$.
+  - **p_ks_test**: *p*-value of the Kolmogorov-Smirnov test \code{ks.test()}
+
+```{r}
+surv_model$Adjust_table
+plot_life_curve(surv_model$models[1])
+```
+
+
+
+#### Interpret the results.
+`predict_best_model` provides a prediction table for the times 1000, 5000, 8000 cycles.
+
+```{r}
+predictions = predict_best_model(surv_model,
+                   pred_times = c(1000,5000,8000)
+                   ,conf_int = TRUE) %>%
+  data.frame()
+predictions
+
+```
+
+
+ As the table says, the reliability for `r predictions[2,1]` cycles is `r round(predictions[2,2],4)*100`%. This is equivalent to say that `r round(predictions[2,2],4)*100`% of the units are expected to survive up to `r predictions[2,1]` cycles.
+
+Sometimes one is more interested in predicting the time at wich a percentage of the units will have failed. This is the function $B(y), y: Reliabilty$.
+
+```{r}
+b10 = surv_model$models[[1]] %>%
+  (function(x)
+    do.call(x$dfns$q, 
+            args = list(p = c(0.9)
+                        , lower.tail = FALSE
+            ) %>%
+              c(get_parameters_flexsurvreg(x))
+    ))
+data.frame(b10)
+
+```
+It is expected that after `r round(b10,2)` cycles, 10% of the units will have already failed.
+
+# Conclusion
+Having the data and knowledge of the problem are the first steps of a proper reliabilty analysis. The package `reliabilitytools` can be used to assist a reliability analysis by automating and standardizing steps and providing graphical tools. Reliability engineering is a much deeper area of study than shown here, but the core is simple: Survival analysis.
+
+
+
+
+

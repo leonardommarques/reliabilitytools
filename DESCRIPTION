@@ -1,0 +1,30 @@
+Package: reliabilitytools
+Title: Reliability Analysis
+Version: 0.0.0.9000
+Authors@R: person("Leonardo", "Marques", email = "leonardommarques@gmail.com", role = c("aut", "cre"))
+Description: This package provides tools for reliability analysis. Mostly, it is just a collection of conenient functions.
+Depends: R (>= 3.5.0),
+        data.table,
+	tidyverse,
+	flexsurv,
+	ggplot2,
+	flexsurv,
+	ggplot2,
+	readxl,
+	plyr,
+	tidyverse,
+	data.table,
+	lubridate,
+	bizdays,
+	stringr,
+	scales,
+	grid
+License: use it at will
+Encoding: UTF-8
+LazyData: true
+Suggests: testthat,
+    knitr,
+    rmarkdown,
+    sqldf
+RoxygenNote: 6.0.1
+VignetteBuilder: knitr

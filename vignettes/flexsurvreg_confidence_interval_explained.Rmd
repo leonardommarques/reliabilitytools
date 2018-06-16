@@ -1,0 +1,221 @@
+---
+title: "Simulation Based Confidence Intervals for Functions With Complicated Derivatives - The Method Used in flexsurv Package"
+author: "Leonardo Marques"
+date: "15 de junho de 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+## Introduction
+
+The `flexsurv` R package offers a framework for flexible parametric survival and multi-state models.
+I have been using it for a while and I am very satisfied with the results and performance. In my journey as a user of the said package I have written some functions and wrappers to make my life easier and keep my sanity and I came across an issue: saving R objects takes way too long and .RDS files are not convenient. I needed something more Data Science friendly not only to save and load faster but also to make it easier to deploy the models to my other platforms written in Python. I know there are tools like `rpy2` and `reticulate` but I prefer to use databases as interface between platforms as It is a more robust approach. Let’s take a look at what I managed to do.
+
+### Less is Better
+
+Before I can "prune" the `flexsurv` object I needed to check what it's elements are.
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+
+library(flexsurv)
+fitW <- flexsurvreg(formula = Surv(futime, fustat) ~ 1, data = ovarian, dist="weibull")
+
+names(fitW)
+
+```
+
+
+My main goal with this experiment was to answer the questions: What are the crucial elements of the `flexsurvreg` object for estimating survival probabilities? What about the confidence interval?
+
+The first one is easy. All I need is the distribution (in the above example I have explicited it, but it is in the `dlist$name` element) and it’s parameters (which are in the `res` element).
+
+```{r}
+# Distribution
+print(fitW$dlist$name)
+
+# Parameters
+print(fitW$res[,1])
+
+```
+Whith these I can predict the survival for a given time.
+
+```{r, results='asis'}
+
+# -- predictions made using flexsurv method.
+flexsurv_predictions = summary(fitW, t = c(100, 200, 600), type = 'survival')
+flexsurv_predictions = data.frame(flexsurv_predictions)
+
+# -- predictions made using flexsurvreg elements
+estimates = list(shape = fitW$res['shape', 'est']
+                 , scale = fitW$res['scale', 'est'])
+
+# -- The size of the object compared to the flexsurvreg.
+proportional_size = as.integer(object.size(c(estimates, 'weibull')))/as.integer(object.size(fitW))*100 
+
+my_predictions = pweibull(q = c(100, 200, 600)
+                          , shape = estimates$shape
+                          , scale = estimates$scale
+                          , lower.tail = FALSE)
+
+# comparison of predictions
+compare_df = data.frame(flexsurv_predictions[1]
+                        ,my_predictions = my_predictions
+                        ,flexsurv_predictions[,-1])
+
+
+
+kable(compare_df) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+
+```
+
+If all I want is to predict survival probabilities I need to save only three things that take `r round(proportional_size,2)`% of the size of the original object. Perfect, right? Well, what if I want the confidence intervals? 
+
+### Simulate to Estimate
+
+`flexsurv` uses simulation to estimate confidence intervals not only because the derivatives of the probability functions might be complicated but also because the package offers support for custom functions to estimate the survival curves.
+<!-- They reference the article  "Simulation based confidence intervals for functions with complicated derivatives" (Mandel, M. , 2013) (<http://mathfaculty.fullerton.edu/sbehseta/ASA.pdf>). I read it three times (ok only once) but only through reverse engineer I could really understand the algorithm: -->
+I read the referenced article (Mandel, M. , 2013) three times (ok only once) but only through reverse engineer I could really understand the algorithm:
+
+  1) Estimate the parameters vector $\theta$ and the variance-covariance matrix $V$ of the life curve
+  2) Assuming the parameter vector has multivariate normal distribution $MultiNorm (\mu,\sigma)$, simulate $B$ values with $\mu=\theta$ and $\sigma=V$.This will result in a matrix $\theta^\ast$ of simulated $\theta$ values. Transform it back to the scale of the response.
+  3) Calculate the survival probability for time $t$ using each simulated vector in $\theta^\ast$. This will result in the vector $S$ of simulated survival probabilities.
+  4) Use the empirical quantiles of $S$ as the confidence interval.
+
+
+  <!-- 1) Estimate the parameters vector $\underset{1\times p}{\theta}$ and the variance-covariance matrix $\underset{p\times p}{V}$ of the life curve -->
+  <!-- 2) Assuming the parameter vector has multivariate normal distribution $MultiNorm (\underset{1\times p}{\mu},\underset{p\times p}{\sigma})$, simulate $B$ values with $\mu=\theta$ and $\sigma=V$.This will result in a matrix $\underset{B\times P}{\theta^\ast}$ of simulated $\underset{1\times p}{\theta}$ values. Transform it back to the scale of the response. -->
+  <!-- 3) Calculate the survival probability for time $t$ using each simulated vector in $\underset{B\times P}{\theta^\ast}$. This will result in the vector $\underset{B\times 1}{S}$ of simulated survival probabilities. -->
+  <!-- 4) Use the empirical quantiles of $\underset{B\times 1}{S}$ as the confidence interval. -->
+
+Step 1 tells me that, to estimate the confidence intervals, I need the parameters and the variance-covariance matrix. According to step 2 I need the function that transforms the parameters to the appropriate scale (some [GLM](https://magesblog.com/post/2015-08-04-generalised-linear-models-in-r/) knowledge is needed here). Step 3 tells me I need the probability distribution of the life curve. So all ellements I need are the `fitW$dlist$name` (Weibull), `fitW$dlist$inv.transforms` (exponential),`fitW$res.t` and `fitW$cov` elements.
+
+```{r}
+
+# Estimate the parameters vector theta and the variance-covariance matrix V of the life curve
+my_theta = c(shape = fitW$res.t['shape', 'est']
+             , scale = fitW$res.t['scale', 'est'])
+
+my_vcov = fitW$cov
+
+# Simulate B values from a bivariate normal with mu=theta and sigma=V
+set.seed(321)
+B = 1000
+theta_star = mvtnorm::rmvnorm(B, my_theta, my_vcov)
+
+# Transform the pameters to the appropriate scale
+theta_star[,1] = fitW$dlist$inv.transforms[[1]](theta_star[,1])
+theta_star[,2] = fitW$dlist$inv.transforms[[2]](theta_star[,2])
+
+# Calculate the survival probability for time t using each simulated value in theta_star.
+my_time = 100
+S = pweibull(q = rep(my_time,B)
+             , shape = theta_star[,'shape']
+             , scale = theta_star[,'scale']
+             , lower.tail = FALSE)
+
+my_ci = quantile(S, probs = c(.025, .975))
+
+# flexsurv estimates
+set.seed(321)
+flexsurv_ci = summary(fitW, t = my_time, type = 'survival')
+flexsurv_ci = data.frame(flexsurv_ci)[,c('lcl', 'ucl')]
+
+compare_df = rbind(my_ci, flexsurv_ci)
+rownames(compare_df) = c('my interval', 'flexsurv interval')
+
+kable(compare_df) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+
+```
+
+
+Great! The results are the same. Recapitulating, the method consists of:
+
+  - simulating curves using the estimated parameters
+  - predicting the survival for the time (100) 
+  - and picking the 2.25% and 97.5% quantiles as the confidence interval (0.845, 0.986). 
+  
+A plot will make things clearer and also put some art to this experiment. 
+
+```{r}
+library(tidyverse)
+fitKM = survfit(Surv(ovarian$futime, ovarian$fustat) ~ 1)
+surv_data = data.frame(surv = fitKM$surv
+                       , time = fitKM$time
+                       , event = fitKM$n.event)
+
+surv_data = filter(surv_data, event == 1)
+
+# estimated parameters
+dist_pars = c(estimates, lower = FALSE)
+
+gg_aux = ggplot(surv_data, aes(x = time, y = surv)) +
+  # -- Kaplan Meier survival estimates
+  geom_point()+ 
+  # -- I put points so the stat_function draws the curves further
+  geom_point(aes_(x = 5000, y = 0), size = 0, show.legend = FALSE)+
+  geom_point(aes_(x = 0, y = 0), size = 0, show.legend = FALSE)+
+  coord_cartesian(y = c(0,1))
+
+
+# Add 100 curves to the plot.
+i = 0
+while(i < nrow(theta_star[1:100,])){
+  i = i+1
+  sim_dist_pars = c(as.list(theta_star[i,]), lower = FALSE)
+  # dist_pars = c(theta_star[i,], lower = FALSE)
+  gg_aux = gg_aux +
+  stat_function(
+    fun = pweibull# function(x,...) # The pdf
+    , args = 	sim_dist_pars	# The parametres
+    , aes_(col = 'sumulations')	# name for the legend colour
+    , inherit.aes = FALSE
+    , alpha = 0.3
+  )
+}
+
+# Add the estimated curve
+gg_aux +
+  stat_function(
+    fun = pweibull# function(x,...) # The pdf
+    , args = 	dist_pars	# The parametres
+    , aes_(col = 'estimated curve')	# name for the legend colour
+    , inherit.aes = FALSE
+    , size = 1.3
+  )+
+  geom_point()+
+  coord_cartesian(y = c(0,1))+
+  labs(col = '', title = 'Estimated Curve and The First 100 Simulations')
+
+```
+
+The 1000 simulated curves will give me 1000 survival estimates for whatever time I want, and by picking the 2.25% and 97.5% quantiles I have a simulated interval. So, all I need are matrices, vectors and texts (to represent the distributions and transformations), which are much easier to store in a database. I can query these values and with some code I can reproduce the results I need. 
+
+### Conclusion
+
+Working with a `r format(object.size(fitW), 'Kb')` .RDS file is not big deal but it is definitely not as convenient and cross platform as a database query. I fit thousands of survival curves every month and in cases like mine seconds can add up to minutes or hours. Plus, since the parameters are individual rows in a couple of table (or documents in collections in case o NoSQL) I can study the distribution of the parameters, gain knowledge about my field of study and add speed and accuracy to my job.
+
+### References
+
+  - Simulation based confidence intervals for functions with complicated derivatives" (Mandel, M. , 2013) (<http://mathfaculty.fullerton.edu/sbehseta/ASA.pdf>)
+  - flexsurv documentation <https://cran.r-project.org/web/packages/flexsurv/flexsurv.pdf>
+  - GLM <https://magesblog.com/post/2015-08-04-generalised-linear-models-in-r/>
+
+
+
+
+
+
+
+
