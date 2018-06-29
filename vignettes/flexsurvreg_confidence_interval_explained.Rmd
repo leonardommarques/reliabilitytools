@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-## Introduction
+### Introduction
 
 The `flexsurv` R package offers a framework for flexible parametric survival and multi-state models.
 I have been using it for a while and I am very satisfied with the results and performance. In my journey as a user of the said package I have written some functions and wrappers to make my life easier and keep my sanity and I came across an issue: saving R objects takes way too long and .RDS files are not convenient. I needed something more Data Science friendly not only to save and load faster but also to make it easier to deploy the models to my other platforms written in Python. I know there are tools like `rpy2` and `reticulate` but I prefer to use databases as interface between platforms as It is a more robust approach. Let’s take a look at what I managed to do.

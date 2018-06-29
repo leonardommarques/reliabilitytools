@@ -65,7 +65,7 @@ plot_surv_analys_collection = function(surv_analys_collection
     , aux_subtitle = aux_subtitle
     , time_scale = 1000
     , col_legend = 'mileage (1,000km)'
-    # , ylim = c(0,1)
+    , ylim = ylim
     , ic_area = conf_int
   )
   
