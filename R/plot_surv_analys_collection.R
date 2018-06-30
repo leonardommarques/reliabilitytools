@@ -25,7 +25,7 @@ plot_surv_analys_collection = function(surv_analys_collection
                                        , ylim = c(0,1)
                                        , time_scale = 1000
                                        , best_model = 1
-                                       , add_ff_table = TRUE
+                                       , add_ff_table = FALSE
 ){
   
   
@@ -55,16 +55,13 @@ plot_surv_analys_collection = function(surv_analys_collection
     }) %>%
     bind_rows(.id = 'month')
   
-  predictions_df
-  
-  
   # --- tendecy plot --- +
   ggaux = plot_predict_multi_surv_reg(
     predictions_df
     , aux_title = aux_title
     , aux_subtitle = aux_subtitle
     , time_scale = 1000
-    , col_legend = 'mileage (1,000km)'
+    , col_legend = 'time (1,000km)'
     , ylim = ylim
     , ic_area = conf_int
   )

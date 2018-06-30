@@ -32,6 +32,57 @@ light_surv_fun = function(model_flexsurvreg
   #   print('callable option not available yet')
   # }
   
+  class(surv_function)= c("light_surv_fun", 'list')
+  
   return(surv_function)
 
 }
+
+
+
+summary.light_surv_fun = function(object
+                                  # , newdata=NULL
+                                  # , X=NULL
+                                  , type="survival"
+                                  # , fn=NULL
+                                  , t=NULL
+                                  , quantiles=0.5
+                                  , start=0
+                                  # , ci=TRUE
+                                  # , B=1000
+                                  # , cl=0.95
+                                  # , tidy=FALSE,
+                                  , ...
+){
+  
+  quantiles = t
+  parameters = list(x=t, lower=FALSE)
+  parameters = c(parameters, object$pars)
+  
+  if(type == 'survival'){
+    fun_prefix = 'p'
+    names(parameters)[1] = 'q'
+    result_col_name = 'time'
+  } else if(type == 'quantile'){
+    fun_prefix = 'q'
+    names(parameters)[1] = 'p'
+    result_col_name = 'quantile'
+  }
+  
+  aux_fun = paste0(fun_prefix, object$dist)
+  
+  result = do.call(aux_fun, parameters)
+  result = data.frame(t, est = result)
+  names(result)[1] = result_col_name
+  
+  return(result)
+  
+}
+
+
+
+
+
+
+
+
