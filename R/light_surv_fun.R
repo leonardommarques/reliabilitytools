@@ -39,7 +39,6 @@ light_surv_fun = function(model_flexsurvreg
 }
 
 
-
 summary.light_surv_fun = function(object
                                   # , newdata=NULL
                                   # , X=NULL
@@ -47,7 +46,7 @@ summary.light_surv_fun = function(object
                                   # , fn=NULL
                                   , t=NULL
                                   , quantiles=0.5
-                                  , start=0
+                                  # , start=0
                                   # , ci=TRUE
                                   # , B=1000
                                   # , cl=0.95
