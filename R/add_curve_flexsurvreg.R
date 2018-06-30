@@ -9,7 +9,7 @@
 #'
 #' Distribution life curve
 #'
-#' Make life curve from distribution
+#' Make life curve grob from distribution
 #'
 #' @param log_transform: If true, add the \code{log = TRUE} to the distribution function.
 #' @param lower: the \code{lower} argument of the dist functions.
@@ -34,7 +34,6 @@ add_curve_flexsurvreg = function(model_flexsurvreg
   ## get the PDF	
   if(m_dist == 'gengamma') dist_fun =  pgengamma
   else if(m_dist == 'genf.orig') dist_fun =  pgenf.orig
-  else if(m_dist == 'weibull') dist_fun =  pweibull
   else if(m_dist == 'weibull') dist_fun =  pweibull
   else if(m_dist == 'gamma') dist_fun =  pgamma
   else if(m_dist == 'exp') dist_fun =  pexp

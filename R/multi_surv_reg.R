@@ -135,16 +135,14 @@ multi_surv_reg = function(surv_data
     
   }
   
-  # -- ff_table -- #
-  ff_table = table(factor(surv_data$status, levels = 0:1))
-  # ff_table = matrix(c(ff_table,sum(ff_table)),ncol=3)
-  ff_table = matrix(c(ff_table,length(surv_data$status)),ncol=3)
-  colnames(ff_table) = c('suspensions','failures','total')
-  
   # Changes the names of the columns to match 'time' and 'status'
   names(surv_data)[names(surv_data) == time_col] = 'time'
   names(surv_data)[names(surv_data) == status_col] = 'status'
   
+  # -- ff_table -- #
+  ff_table = table(factor(surv_data$status, levels = 0:1))
+  ff_table = matrix(c(ff_table,length(surv_data$status)),ncol=3)
+  colnames(ff_table) = c('suspensions','failures','total')
   
   # Creates surv object and formula
   aux_surv = with(surv_data,Surv(time, status))
