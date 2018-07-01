@@ -87,7 +87,8 @@ param$data = param$data %>%
       data = i_data
       , indiv_col = 'id'
       , obs_time_col = 'cycles'
-      , status_col = 'status')
+      , status_col = 'status'
+      , limit = 1)
   }
   )
 
@@ -113,10 +114,10 @@ param$ff_table = param$reports %>% map('ff_table')
 param_light = param
 
 # -- models -- #
-param_light$models = lapply(param_light$models, function(x) lapply(x, light_surv_fun))
+param_light$models = lapply(param_light$models, function(x) lapply(x, light_flexsurvreg))
 
 plot_surv_analys_collection(param_light, pred_times = c(50, 200, 300, 800))
-plot_surv_analys_collection(param, pred_times = c(50, 200, 300, 800))
+# plot_surv_analys_collection(param, pred_times = c(50, 200, 300, 800))
 
 plot_life_curve(param$models$`2017-06-01`)
 
@@ -141,6 +142,18 @@ for(i in param_light$report %>% names()){
   print(i)
   param_light$reports[[i]]$models = NULL
 }
+
+param_light$mr_df = param_light$models %>%
+  map(predict_best_model) %>%
+  bind_rows()
+
+param$mr_df = param$models %>%
+  map(predict_best_model) %>%
+  bind_rows()
+
+class(param_light$models[[1]])
+class(param_light$models[[1]][[1]])
+class(param$models[[1]][[1]])
 
 
 # --

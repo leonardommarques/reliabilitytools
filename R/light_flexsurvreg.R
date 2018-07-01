@@ -10,7 +10,7 @@
 #' @examples
 #'
 
-light_surv_fun = function(model_flexsurvreg
+light_flexsurvreg = function(model_flexsurvreg
                               # , callable = FALSE
                               ){
   
@@ -32,14 +32,14 @@ light_surv_fun = function(model_flexsurvreg
   #   print('callable option not available yet')
   # }
   
-  class(surv_function)= c("light_surv_fun", 'list')
+  class(surv_function)= c("light_flexsurvreg", 'list')
   
   return(surv_function)
 
 }
 
 
-summary.light_surv_fun = function(object
+summary.light_flexsurvreg = function(object
                                   # , newdata=NULL
                                   # , X=NULL
                                   , type="survival"
