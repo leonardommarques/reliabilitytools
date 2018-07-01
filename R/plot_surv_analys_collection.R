@@ -23,9 +23,9 @@ plot_surv_analys_collection = function(surv_analys_collection
                                        , aux_title = ''
                                        # , aux_subtitle = ''
                                        , ylim = c(0,1)
-                                       , time_scale = 1000
+                                       , time_scale = 1
                                        , best_model = 1
-                                       , add_ff_table = FALSE
+                                       , add_ff_table = TRUE
 ){
   
   # -- preprocessing -- +
@@ -51,15 +51,16 @@ plot_surv_analys_collection = function(surv_analys_collection
               , ci=conf_int ) %>%
         as.data.table()
     }) %>%
-    bind_rows(.id = 'month')
+    bind_rows(.id = 'month') %>%
+    arrange(month)
   
   # --- tendecy plot --- +
   ggaux = plot_predict_multi_surv_reg(
     predictions_df
     , aux_title = aux_title
     , aux_subtitle = aux_subtitle
-    , time_scale = 1000
-    , col_legend = 'time (1,000km)'
+    , time_scale = time_scale
+    , col_legend = 'time' #'time (1,000km)'
     , ylim = ylim
     , ic_area = conf_int
   )

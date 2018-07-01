@@ -45,7 +45,7 @@ campos %>% names() %>% sort()
 
 param = list(
   rm_size = 12
-  , anaysis_period = c(as.Date('2017-01-01'), as.Date('2017-06-01'))
+  , anaysis_period = c(as.Date('2015-01-01'), as.Date('2018-04-01'))
   , filter_columns = list(model = "A")
   , classification_columns = list( CAUSE_171 = list(failure_cause_group = 171))
 )
@@ -105,11 +105,10 @@ param$reports = param$data %>%
 
 # -- A better object -- #
 param$models = param$reports %>% map('models')
-
+param$ff_table = param$reports %>% map('ff_table')
 # ----------------- #
 # light version
 # ----------------- #
-
 
 param_light = param
 
@@ -119,7 +118,9 @@ param_light$models = lapply(param_light$models, function(x) lapply(x, light_surv
 plot_surv_analys_collection(param_light, pred_times = c(50, 200, 300, 800))
 plot_surv_analys_collection(param, pred_times = c(50, 200, 300, 800))
 
-# -- data -- #
+plot_life_curve(param$models$`2017-06-01`)
+
+# -- data lighter -- #
 param_light$data_mor = param_light$data %>% 
   bind_rows() %>%
   data.table() %>%
@@ -157,7 +158,6 @@ param_light$data[[1]] = param_light$data_mor %>%
   filter_(list(id = param_light$data[[1]]$id) %>%
                                                list_to_Rfilter()
           )
-                     
 
 param_light$data[[1]] %>%class()
 param$data[[1]] %>% class()
@@ -182,6 +182,33 @@ param_light$reports = lapply(
     x$models = NULL
   }
   )
+
+# --------------------
+
+
+aux_df = data.frame(indiv = 1
+                    , status = c(1,1,1,1,0)
+                    , time = c(1,4,5,7,12))
+
+# Considering only the 2 first failures
+prepare_life_times(aux_df
+                   , indiv_col = 'indiv'
+                   , status_col = 'status'
+                   , obs_time_col = 'time'
+                   , limit = 2
+                   )
+
+# situation that once the component fails, it is replaced by a remanufactured one and we are studying the reliability of the remanufactured component.
+
+prepare_life_times(aux_df
+                   , indiv_col = 'indiv'
+                   , status_col = 'status'
+                   , obs_time_col = 'time'
+                   , limit = 2
+                   , skip = 1
+)
+aux_df_pure
+limit_skip_df
 
 
 

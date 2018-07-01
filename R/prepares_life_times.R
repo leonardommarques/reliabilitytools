@@ -6,26 +6,49 @@
 #' @param indiv_col: column containing the identification of the individual.
 #' @param obs_time_col: Observed time of the event
 #' @param status_col: Event (O suspension, 1 "death")
+#' @param limit: The maximum number of events per idividual to be considered.
+#' @param skip: The ammount of events to skip. 
 #' @return A \code{data.frame} conatining the prepared data.
-#' @details The codes calls prepare_indiv_life_times for each individual. 
+#' @details Prepared the life times creating a column of \code{elapsed} times between events.
+#' In cases that only the first n event should be considered, \code{limit = n} should be used.
+#' If the first n events should not be considered, \code{skip = n} should be used.
 #' @export
 #' @examples
 #' 
-#' da = system.file("extdata", "example.csv", package = "reliabilitytools")
-#' da = read.csv2(da)
+#' aux_df = data.frame(indiv = 1
+#'                     , status = c(1,1,1,1,0)
+#'                     , time = c(1,4,5,7,12))
 #' 
-#' da %>%
-#'   mutate(status = as.integer(failure_cause_group == 560)) %>%
-#'   prepare_life_times(indiv_col = 'id'
-#'                      , status_col = 'status'
-#'                      , obs_time_col = 'cycles')
-#'
-#'
+#' # Considering only the 2 first failures
+#' prepare_life_times(aux_df
+#'                    , indiv_col = 'indiv'
+#'                    , status_col = 'status'
+#'                    , obs_time_col = 'time'
+#'                    , limit = 2
+#' )
+#' 
+#' # situation that once the component fails, it is replaced by a remanufactured one and we are studying the reliability of the remanufactured component.
+#' prepare_life_times(aux_df
+#'                    , indiv_col = 'indiv'
+#'                    , status_col = 'status'
+#'                    , obs_time_col = 'time'
+#'                    , limit = 2
+#'                    , skip = 1
+#' )
+
 prepare_life_times = function(data
-                                 ,indiv_col ='indiv'
-                                 ,status_col = 'status'
-                                 ,obs_time_col='obs_time'
+                              ,indiv_col ='indiv'
+                              ,status_col = 'status'
+                              ,obs_time_col='obs_time'
+                              ,limit = 0
+                              ,skip = 0
+                              
 ){
+  
+  # argument check
+  stopifnot(limit >=0)
+  stopifnot(skip >=0)
+  
   # Match the names of the columns to the function call
   names(data)[names(data) == indiv_col] = 'indiv'
   names(data)[names(data) == status_col] = 'status'
@@ -63,10 +86,22 @@ prepare_life_times = function(data
   
   failure_data = lapply(indiv_failures,function(xx){
     aux_data = data_eventos[indiv == xx,] # data.table way to filter lines
-    # order by obs_time
+    # Calculate elapsed time
     aux_data$start = c(0, aux_data$obs_time[-length(aux_data$obs_time)])
     aux_data$stop = aux_data$obs_time
     aux_data$elapsed = aux_data$stop - aux_data$start
+    
+    # limit ans skip the amount of events
+    if(limit != 0 | skip != 0){
+      aux_data_susp = aux_data[aux_data$status == 0]
+      aux_data_events = aux_data[aux_data$status == 1]
+      # separetes events from suspensios and limits the ammount of events
+      if(skip != 0) aux_data_events = aux_data_events[(0:skip)*-1,]
+      if(limit != 0) aux_data_events = head(aux_data_events, limit)
+      
+      aux_data = rbind(aux_data_events, aux_data_susp)
+    }
+    
     aux_data
   })
   
