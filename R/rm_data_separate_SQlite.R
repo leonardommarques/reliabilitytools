@@ -28,8 +28,8 @@ rm_data_separate_SQlite = function(
   , current_month
   , population_filter = NA
   , select_statement = NA
-  , assemb_col = "DWASSD_yearmon"
-  , repair_col = "FPAYDT_yearmon"
+  , assemb_col = "assembly_date"
+  , repair_col = "failure_date"
 ){
   ################################################ +
   ## Makes the RMx data set of the given month. The fields are limited to VdBfqis style of population segregation.Returns a tibble.
@@ -51,18 +51,6 @@ rm_data_separate_SQlite = function(
   assemb_upp = as.integer(format(assemb_upp, '%Y%m'))
   assemb_lwr = current_month %m-% months(RM_size)
   assemb_lwr = as.integer(format(assemb_lwr, '%Y%m'))
-  
-  if(is.na(select_statement)){
-    select_statement = 'select
-    "Chassis Id" as CHASNO
-    , vi.DWASSD_yearmon
-    , mt."Marketing Type"
-    , cast(substr(mt."Repair Date",1,4) || substr(mt."Repair Date",6,2) as decimal) as FPAYDT_yearmon --REPDAT_yearmon
-    
-    from CLAIMS_maintance_contract mt
-    left join VEHICLE_INFO vi on vi.CHASNO_srt = mt."Chassis Id"
-    '
-  }
   
   aux_query = paste(select_statement
                     # Date Filters

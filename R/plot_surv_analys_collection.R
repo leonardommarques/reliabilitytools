@@ -28,10 +28,8 @@ plot_surv_analys_collection = function(surv_analys_collection
                                        , add_ff_table = FALSE
 ){
   
-  
-  
   # -- preprocessing -- +
-  aux_title = sprintf('RM%i - %s'
+  aux_title = sprintf('MR%i - %s'
                       , surv_analys_collection$rm_size
                       , surv_analys_collection$classification_columns %>% 
                         names)
@@ -41,8 +39,8 @@ plot_surv_analys_collection = function(surv_analys_collection
                          , surv_analys_collection$classification_columns[[1]] %>%
                            list_to_Rfilter() %>%
                            from_Rfilter_to_title_str()
-                         
   )
+  
   
   # -- prediction data.frame -- +
   predictions_df = surv_analys_collection$models %>%
