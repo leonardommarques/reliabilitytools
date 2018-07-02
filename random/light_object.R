@@ -45,7 +45,7 @@ campos %>% names() %>% sort()
 
 param = list(
   rm_size = 12
-  , anaysis_period = c(as.Date('2015-01-01'), as.Date('2018-04-01'))
+  , anaysis_period = c(as.Date('2017-01-01'), as.Date('2018-04-01'))
   , filter_columns = list(model = "A")
   , classification_columns = list( CAUSE_171 = list(failure_cause_group = 171))
 )
@@ -107,6 +107,7 @@ param$reports = param$data %>%
 # -- A better object -- #
 param$models = param$reports %>% map('models')
 param$ff_table = param$reports %>% map('ff_table')
+
 # ----------------- #
 # light version
 # ----------------- #
@@ -144,16 +145,10 @@ for(i in param_light$report %>% names()){
 }
 
 param_light$mr_df = param_light$models %>%
-  map(predict_best_model) %>%
-  bind_rows()
-
-param$mr_df = param$models %>%
-  map(predict_best_model) %>%
-  bind_rows()
-
-class(param_light$models[[1]])
-class(param_light$models[[1]][[1]])
-class(param$models[[1]][[1]])
+  map(function(x) predict_best_model(x, pred_times =  c(50, 200, 300, 800)) %>% 
+        as.data.table()) %>%
+  bind_rows(.id = 'month') %>%
+  arrange(month)
 
 
 # --
