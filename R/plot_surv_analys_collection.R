@@ -43,17 +43,20 @@ plot_surv_analys_collection = function(surv_analys_collection
   
   
   # -- prediction data.frame -- +
-  predictions_df = surv_analys_collection$models %>%
-    map(function(x){
-      summary(x[[best_model]]
-              , t = pred_times
-              , type = 'survival'
-              , ci=conf_int ) %>%
-        as.data.table()
-    }) %>%
-    bind_rows(.id = 'month') %>%
-    arrange(month)
-  
+  if(!is.null(surv_analys_collection$surv_predictions)){
+    predictions_df = surv_analys_collection$surv_predictions
+  } else { 
+    predictions_df = surv_analys_collection$models %>%
+      map(function(x){
+        summary(x[[best_model]]
+                , t = pred_times
+                , type = 'survival'
+                , ci=conf_int ) %>%
+          as.data.table()
+      }) %>%
+      bind_rows(.id = 'month') %>%
+      arrange(month)
+  }
   # --- tendecy plot --- +
   ggaux = plot_predict_multi_surv_reg(
     predictions_df

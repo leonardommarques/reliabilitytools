@@ -15,11 +15,17 @@
 add_ff_table = function(ggaux, multi_surv_reg){
   
   # -- fault frequency table -- + 
-  aux_df = multi_surv_reg[['ff_table']] %>% map(as.data.frame) %>% rbindlist()
-  
+  if(class(multi_surv_reg[['ff_table']]) == 'list'){
+    aux_df = multi_surv_reg[['ff_table']] %>% 
+      map(as.data.frame) %>% 
+      bind_rows(.id = 'month')
+    
+  } else {
+    aux_df = multi_surv_reg[['ff_table']]
+  }
   
   # -- Month -- +
-  aux_df$month = names(multi_surv_reg[['ff_table']])
+  # aux_df$month = names(multi_surv_reg[['ff_table']])
   aux_df$month = factor(aux_df$month
                         , levels = as.character(sort(unique(as.Date(aux_df$month))))
                         , ordered = TRUE)
@@ -27,7 +33,8 @@ add_ff_table = function(ggaux, multi_surv_reg){
   
   
   # -- offset to separate each label -- +
-  aux_df$offset = rep(c(0,4), nrow(aux_df)/2)
+  aux_df$offset = rep(c(0,4), ceiling(nrow(aux_df)/2)) %>% 
+    head(nrow(aux_df))
   
   # -- Add geom_tex object -- +
   ggaux + 

@@ -37,8 +37,12 @@ plot_predict_multi_surv_reg = function(multi_surv_reg
   #---+
   # creates an ordered factor column for YearMon
   #---+
-  predict_df$mes = factor(predict_df$month
-                          , levels = unique(predict_df$month)
+  predict_df = predict_df %>%
+    mutate(mes = as.character(month)) %>%
+    arrange(mes)
+  
+  predict_df$mes = factor(predict_df$mes
+                          , levels = unique(predict_df$mes)
                           , ordered = TRUE
   )  
   levels(predict_df$mes) = format(as.Date(levels(predict_df$mes)), format = "%b%y")
