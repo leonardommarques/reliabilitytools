@@ -151,7 +151,8 @@ param_light$mr_df = param_light$models %>%
   arrange(month)
 
 
-# --
+# --------------------
+
 sprintf('The light object has %s.\nThe original has %s.\nThe proportional size is %s%s'
         , format(object.size(param_light), 'Kb')
         , format(object.size(param), 'Kb')
@@ -160,64 +161,4 @@ sprintf('The light object has %s.\nThe original has %s.\nThe proportional size i
         , '%'
         ) %>% cat()
 
-
-
-param_light$data[[1]] = param_light$data_mor %>%
-  filter_(list(id = param_light$data[[1]]$id) %>%
-                                               list_to_Rfilter()
-          )
-
-param_light$data[[1]] %>%class()
-param$data[[1]] %>% class()
-
-identical(param_light$data[[1]] %>% data.frame(), param$data[[1]])
-
-param_light$data[[1]][[i]] %in% param$data[[1]][[i]] %>% table(useNA = 'always')
-
-param_light$data[[1]]$index %in% param$data[[1]]$index
-
-filter_()
-
-param_light$data[[1]] %>% data.table()
-
-param_light$reports$`2017-06-01` %>% 
-  lapply(function(x){
-    format(object.size(x), 'Kb')
-  })
-
-param_light$reports = lapply(
-  param_light$reports, function(x){
-    x$models = NULL
-  }
-  )
-
 # --------------------
-
-
-aux_df = data.frame(indiv = 1
-                    , status = c(1,1,1,1,0)
-                    , time = c(1,4,5,7,12))
-
-# Considering only the 2 first failures
-prepare_life_times(aux_df
-                   , indiv_col = 'indiv'
-                   , status_col = 'status'
-                   , obs_time_col = 'time'
-                   , limit = 2
-                   )
-
-# situation that once the component fails, it is replaced by a remanufactured one and we are studying the reliability of the remanufactured component.
-
-prepare_life_times(aux_df
-                   , indiv_col = 'indiv'
-                   , status_col = 'status'
-                   , obs_time_col = 'time'
-                   , limit = 2
-                   , skip = 1
-)
-aux_df_pure
-limit_skip_df
-
-
-
-
