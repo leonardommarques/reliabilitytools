@@ -8,4 +8,9 @@ qunif_compl = function(...){
   1-qunif(...)
 }
 
+pNULL_model = function(x, ...){
+  return(rep(NA, length(x)))
+}
 
+
+pNULL_model(1:12)

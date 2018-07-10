@@ -16,7 +16,7 @@ light_flexsurvreg = function(model_flexsurvreg
   
   if(class(model_flexsurvreg[[1]]) == 'flexsurvreg_faultless'){
     dist = 'punif'
-    , parameters = list(min = 0, max = 0)
+    parameters = list(min = 0, max = 0)
   } else {
     # distribution
     dist = model_flexsurvreg$dlist$name
