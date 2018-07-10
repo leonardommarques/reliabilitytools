@@ -14,13 +14,23 @@ light_flexsurvreg = function(model_flexsurvreg
                               # , callable = FALSE
                               ){
   
-  # distribution
-  dist = model_flexsurvreg$dlist$name
-  dist = gsub(dist, patt = '\\.quiet', repl='')
+  if(class(model_flexsurvreg[[1]]) == 'flexsurvreg_faultless'){
+    dist = 'punif'
+    , parameters = list(min = 0, max = 0)
+  } else {
+    # distribution
+    dist = model_flexsurvreg$dlist$name
+    dist = gsub(dist, patt = '\\.quiet', repl='')
+    
+    # parameters
+    parameters = model_flexsurvreg$res[,'est'] %>% as.list()
+    names(parameters) = row.names(model_flexsurvreg$res)
+  }
   
-  # parameters
-  parameters = model_flexsurvreg$res[,'est'] %>% as.list()
-  names(parameters) = row.names(model_flexsurvreg$res)
+  surv_function = list(
+    dist = dist
+    , pars = parameters
+  )
   
   surv_function = list(
     dist = dist
