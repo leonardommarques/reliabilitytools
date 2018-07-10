@@ -22,11 +22,19 @@ pareto = function(i_data,columns = c('CPART', 'DEBCOD'), status_column = 'status
     if(!is.na(status_column) & (status_column != ''))
       i_data = i_data %>% filter(status==1) 
     
-    i_data %>%
+    if(nrow(i_data) == 0){
+      result = data.frame(0,0,0)
+      names(result) = c(column, 'prop', 'n')
+      return(result)
+    } 
+    
+    result = i_data %>%
       dplyr::group_by_(column) %>%
       dplyr::summarise(n = n()) %>%
       mutate(prop = paste0(round(100 * n/sum(n), 0), "%")) %>%
       arrange(-n)
+    
+    return(result)
   })
   return(paretos)
 }
