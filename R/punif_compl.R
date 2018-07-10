@@ -4,3 +4,8 @@ punif_compl = function(...){
   1-punif(...)
 }
 
+qunif_compl = function(...){
+  1-qunif(...)
+}
+
+
