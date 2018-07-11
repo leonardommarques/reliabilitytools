@@ -11,6 +11,3 @@ qunif_compl = function(...){
 pNULL_model = function(x, ...){
   return(rep(NA, length(x)))
 }
-
-
-pNULL_model(1:12)

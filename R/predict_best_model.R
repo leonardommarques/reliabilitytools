@@ -27,7 +27,7 @@ predict_best_model = function(m_flexsurvreg
             type="survival",
             ci=conf_int
             , ...)
-  } else if( any(c('flexsurvreg', 'light_flexsurvreg' ) %in% class(m_flexsurvreg[[best_model]]))) {
+  } else if( any(c('flexsurvreg', 'light_flexsurvreg', 'flexsurvreg_faultless', 'flexsurvreg_NULL' ) %in% class(m_flexsurvreg[[best_model]]))) {
     summary(m_flexsurvreg[[best_model]], t=pred_times,type="survival",ci=conf_int, ...)
   } else {
     summary(m_flexsurvreg, t=pred_times,type="survival",ci=conf_int, ...)

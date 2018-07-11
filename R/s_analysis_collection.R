@@ -18,7 +18,19 @@
 
 s_analysis_collection = function(
   analysis_collection
-  , pred_times = c(50, 100, 150, 200)*1000){
+  , pred_times = c(50, 100, 150, 200)*1000
+  , ci = FALSE){
+  
+  # -- prediction data.frames -- #
+  if(is.null(analysis_collection$surv_predictions)){
+    analysis_collection$surv_predictions = analysis_collection$models %>%
+      map(function(x) predict_best_model(x, pred_times = pred_times, ci = ci) %>% 
+          as.data.table()
+      ) %>%
+      bind_rows(.id = 'month') %>%
+      arrange(month)
+  }
+  
   
   # -- smaller models -- #
   analysis_collection$models = lapply(
@@ -44,16 +56,6 @@ s_analysis_collection = function(
   for(i in analysis_collection$report %>% names()){
     analysis_collection$reports[[i]]$models = NULL
   }
-  
-  
-  # -- prediction data.frames -- #
-  analysis_collection$surv_predictions = analysis_collection$models %>%
-    map(function(x) predict_best_model(x, pred_times = pred_times) %>% 
-          as.data.table()
-        ) %>%
-    bind_rows(.id = 'month') %>%
-    arrange(month)
-  
   
   # ----------- #
   class(analysis_collection) = c('s_analysis_collection', 'list')

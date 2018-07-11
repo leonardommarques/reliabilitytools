@@ -47,9 +47,10 @@ def analysis_collection_r_to_mongo(
     analysis_collection['surv_predictions'] = analysis_collection['surv_predictions'].to_dict(orient='records')
 
     # -- paretos to dictionaries -- #
-    for pareto_list in analysis_collection['pareto'].keys():
-        for pareto in analysis_collection['pareto'][pareto_list].keys():
-            analysis_collection['pareto'][pareto_list][pareto] = analysis_collection['pareto'][pareto_list][pareto].to_dict(orient='records')
+    if 'pareto' in analysis_collection:
+        for pareto_list in analysis_collection['pareto'].keys():
+            for pareto in analysis_collection['pareto'][pareto_list].keys():
+                analysis_collection['pareto'][pareto_list][pareto] = analysis_collection['pareto'][pareto_list][pareto].to_dict(orient='records')
 
     # -- Save in mongo -- #
     db.get_collection(collection_name).insert(analysis_collection)

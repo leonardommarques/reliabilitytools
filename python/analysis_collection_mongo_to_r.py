@@ -11,7 +11,7 @@ def analysis_collection_mongo_to_r(
 
     client = pymongo.MongoClient()
     db = client[db_name]
-    doc_db = db.get_collection(collection_name).find_one(query_doc)
+    doc_db = db.get_collection(collection_name).find(query_doc)
 
     print(query_doc)
     print(collection_name)
