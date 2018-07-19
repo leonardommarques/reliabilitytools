@@ -7,7 +7,7 @@
 #' @param analysis_collection A \code{analysis_collection} object.
 #' @param pred_times A vector containing the times to predict survival for.
 #' @return A \code{s_analysis_collection} which is a smaller version of the original \code{analysis_collection} object. 
-#' @details The \code{s_analysis_collection} has lesser objects the following changes
+#' @details The \code{s_analysis_collection} has  objects the following changes
 #'  - The \code{models} is not a list of \code{flexsurvreg}.
 #'  - \code{data_mor} is created as a \code{data.frame} of the unique registers (according to the \code{index} column) of all data.frames in \code{data}
 #'  - \code{data} only stores the \code{index} column, so the whole data.framae can be retrieved from it.
@@ -19,12 +19,12 @@
 s_analysis_collection = function(
   analysis_collection
   , pred_times = c(50, 100, 150, 200)*1000
-  , ci = FALSE){
+  , conf_int = FALSE){
   
   # -- prediction data.frames -- #
   if(is.null(analysis_collection$surv_predictions)){
     analysis_collection$surv_predictions = analysis_collection$models %>%
-      map(function(x) predict_best_model(x, pred_times = pred_times, ci = ci) %>% 
+      map(function(x) predict_best_model(x, pred_times = pred_times, ci = conf_int) %>% 
           as.data.table()
       ) %>%
       bind_rows(.id = 'month') %>%
