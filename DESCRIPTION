@@ -19,7 +19,7 @@ Depends: R (>= 3.5.0),
 	stringr,
 	scales,
 	grid
-License: use it at will
+License: GPL v2
 Encoding: UTF-8
 LazyData: true
 Suggests: testthat,
