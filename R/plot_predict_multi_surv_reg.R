@@ -91,11 +91,14 @@ plot_predict_multi_surv_reg = function(multi_surv_reg
   # ------ +
   
   if(ic_area){
+    max_time = sort(unique(predict_df$time), decreasing = TRUE)[1]
+    ic_df = predict_df %>%
+      mutate(lcl = lclifelse(time == max_time, 1, NA),
+             ucl = uclifelse(time == max_time, 1, NA)
+      )
+    
     ggaux = ggaux+
-      geom_ribbon(data = predict_df %>%
-                    mutate(lcl = lcl*ifelse(time == max(time), 1, NA),
-                           ucl = ucl*ifelse(time == max(time), 1, NA)
-                    ),
+      geom_ribbon(data =ic_df,
                   aes(x = mes,
                       ymin = lcl,
                       ymax = ucl,
@@ -106,9 +109,6 @@ plot_predict_multi_surv_reg = function(multi_surv_reg
       )+
       scale_alpha(guide = 'none')
   }
-  # ------ +
-  
-  
   
   return(ggaux)
   
