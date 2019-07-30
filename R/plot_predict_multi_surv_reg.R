@@ -53,6 +53,11 @@ plot_predict_multi_surv_reg = function(multi_surv_reg
   predict_df$time = predict_df$time/time_scale
   predict_df$time = factor(predict_df$time, levels = sort(unique(predict_df$time)), ordered = TRUE)
   
+  # # -- reorder the time factor because for some stupid reasong ggplot started using another colour pallet for factors that have numerical labels
+  # predict_df = predict_df %>%
+  #   mutate(time = paste(as.character(time), ' ')) %>%
+  #   mutate(time = factor(time))
+  # predict_df$time = reorder(predict_df$time, as.numeric(as.character(predict_df$time)))
   
   # -- Predictions for the maximum time -- #
   max_predict_df = data.frame(predict_df)
@@ -91,14 +96,11 @@ plot_predict_multi_surv_reg = function(multi_surv_reg
   # ------ +
   
   if(ic_area){
-    max_time = sort(unique(predict_df$time), decreasing = TRUE)[1]
-    ic_df = predict_df %>%
-      mutate(lcl = lclifelse(time == max_time, 1, NA),
-             ucl = uclifelse(time == max_time, 1, NA)
-      )
-    
     ggaux = ggaux+
-      geom_ribbon(data =ic_df,
+      geom_ribbon(data = predict_df %>%
+                    mutate(lcl = lcl*ifelse(time == max(time), 1, NA),
+                           ucl = ucl*ifelse(time == max(time), 1, NA)
+                    ),
                   aes(x = mes,
                       ymin = lcl,
                       ymax = ucl,
@@ -109,6 +111,12 @@ plot_predict_multi_surv_reg = function(multi_surv_reg
       )+
       scale_alpha(guide = 'none')
   }
+  # ------ +
+  
+  ggaux = ggaux + 
+    scale_color_brewer(palette = "Dark2") + 
+    scale_fill_brewer(palette = "Dark2")
+  
   
   return(ggaux)
   

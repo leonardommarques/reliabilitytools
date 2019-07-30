@@ -96,7 +96,7 @@ multi_surv_reg = function(surv_data
     class(faultless_model) = "flexsurvreg_faultless"
     
     # -- distribution information
-    faultless_model$dlist = list('name' = 'unif_compl')
+    faultless_model$dlist = list('name' = 'unif')
     res = matrix(c(0,0),ncol = 1)
     rownames(res) = c('min', 'max')
     colnames(res) = c('est')

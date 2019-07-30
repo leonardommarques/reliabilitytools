@@ -42,6 +42,7 @@ add_curve_flexsurvreg = function(model_flexsurvreg
   else if(m_dist == 'gompertz') dist_fun =  pgompertz
   else if(m_dist == 'plognormal') dist_fun =  pnorm # -- plognormal
   else if(m_dist == 'unif') dist_fun = function(...) 1-punif(...) # when there are no failures in the dataset.
+  else if(m_dist == 'unif_compl') dist_fun = function(...) punif(...)
   
   
   ## get the paramters

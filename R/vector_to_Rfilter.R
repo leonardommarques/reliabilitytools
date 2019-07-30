@@ -27,7 +27,7 @@ vector_to_Rfilter = function(field_name = ''
     
     # Vector with the values
     values_vector = strsplit(as.character(values)
-                             , split = "[-;]")[[1]]
+                             , split = "[;]")[[1]]
     
     # filter string
     result = paste0('& '

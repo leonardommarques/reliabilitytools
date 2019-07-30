@@ -23,13 +23,14 @@ theme_MASTER = ggplot2::theme(axis.text.x=element_text(angle=90, vjust=.5, size 
 ######+
 
 # -- Grid theme -- #
-theme_LIFECURVE = ggplot2::theme(axis.text.x=element_text(hjust=.5, size = 13, vjust=1
-                                                          # ,family="serif", fontface='plain'
-)
-, axis.title=element_text(size=14)
-, axis.text.y=element_text(size = 13)
-, panel.grid.major.x = element_line(colour="gray", size=0.3)
-, panel.grid.major.y = element_line(colour="gray", size=0.3))
+theme_LIFECURVE = ggplot2::theme(
+  axis.text.x=element_text(hjust=.5, size = 13, vjust=1
+                           # ,family="serif", fontface='plain'
+  )
+  , axis.title=element_text(size=14)
+  , axis.text.y=element_text(size = 13)
+  , panel.grid.major.x = element_line(colour="gray", size=0.3)
+  , panel.grid.major.y = element_line(colour="gray", size=0.3))
 
 
 # -- x breaks -- #

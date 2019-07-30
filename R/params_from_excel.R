@@ -43,6 +43,24 @@ params_from_excel = function(file_path =''
                            , sheet = sheet
                            , ...)
   
+  # -- remove enpty rows -- #
+  param_sheet = param_sheet[
+    rowSums(is.na(param_sheet)) != ncol(param_sheet),]
+  
+  #--------------+
+  # avoid repetitive reports
+  #--------------+
+  old_nrow = nrow(param_sheet)
+  param_sheet = param_sheet %>% unique()
+  new_nrow = nrow(param_sheet)
+  if(old_nrow != new_nrow){ 
+    aux = sprintf(
+      "There are %s repetitive paramenters. Using only %s unique lines."
+      , old_nrow - new_nrow
+      , new_nrow)
+    warning(aux, call. = FALSE)
+    }
+  
   # ---- +
   # get list of parameters that will be used to classify the status and to filter  population
   # ---- +
@@ -90,7 +108,7 @@ params_from_excel = function(file_path =''
           unique() %>% 
           janitor::remove_empty_cols() %>%
           as.list() %>% 
-          map(function(values) strsplit(as.character(values), split = "[-;]")[[1]])
+          map(function(values) strsplit(as.character(values), split = "[;]")[[1]])
         
         # , filter_rule_str = i_pop[filter_columns] %>% 
         #   unique() %>% make_where_statement_string() %>%
@@ -103,7 +121,7 @@ params_from_excel = function(file_path =''
           split(by = classification_columns) %>%
           map(janitor::remove_empty_cols) %>%
           map(as.list) %>% 
-          map(function(xx) map(xx,function(values) strsplit(as.character(values), split = "[-;]")[[1]]))
+          map(function(xx) map(xx,function(values) strsplit(as.character(values), split = "[;]")[[1]]))
         
         
         # , classification_rule_str = i_pop[classification_columns] %>% 

@@ -20,9 +20,6 @@ simplify_analysis = function(rel_analysis){
   rel_analysis$data = rel_analysis$data %>%
     map(as.list)
   
-  rel_analysis$ff_table = rel_analysis$ff_table %>%
-    bind_rows(.id = 'month')
-  
   #  -- dates to str -- #
   rel_analysis$analysis_period = rel_analysis$analysis_period %>% as.character()
   

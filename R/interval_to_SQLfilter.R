@@ -22,7 +22,7 @@ interval_to_SQLfilter = function(field_name = ''
   if(str_count(values, patt = '[<>]') %>% sum() != length(values))
     stop('invalid values for interval.')
   
-  values = paste('and ',field_name, values, collapse = ' ')
+  values = paste('\nand ',field_name, values, collapse = ' ')
   
   return(values)
   

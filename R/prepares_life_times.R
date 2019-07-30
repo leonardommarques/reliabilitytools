@@ -40,7 +40,7 @@ prepare_life_times = function(data
                               ,indiv_col ='indiv'
                               ,status_col = 'status'
                               ,obs_time_col='obs_time'
-                              ,limit = 0
+                              ,limit = Inf
                               ,skip = 0
                               
 ){
@@ -56,8 +56,12 @@ prepare_life_times = function(data
   
   data = data.table(data)
   
-  ################################+
-  # Split the data.frame into events and suspenssions, orders the suspenstions by ID and observed time and deletes repeated IDs
+  
+  # ------------------------------------------------- #
+  # Get last suspension
+  #  - Split the data.frame into "events" and "suspensions"
+  #  - order the suspenstions by ID and observed time and delete repeated IDs
+  # ------------------------------------------------- #
   setDT(data)
   setorder(data,indiv,-obs_time)
   data_events = data[, .SD[status==1]]
@@ -65,52 +69,79 @@ prepare_life_times = function(data
   data_suspentions = data[, .SD[status!=1]]
   data_suspentions = unique(data_suspentions,by = c('indiv'))
   
-  ################################+
-  
   data = rbind(data_events,data_suspentions)
+  setorder(data,indiv, -status,obs_time)
   
+  # ------------------------------------------------- #
   # Creates the start, stop and time columns
-  index = data$indiv %in% indiv_failures
-  data$indiv_failures = 0
-  data$indiv_failures[index] = 1
+  # ------------------------------------------------- #
   
-  # Start-stop for suspetions
-  data_suspentions = data[indiv_failures==0,]
-  data_suspentions$start = 0
-  data_suspentions$stop = data_suspentions$obs_time
-  data_suspentions$elapsed = data_suspentions$stop
+  data[['aux_displaced_indiv_aux']] = c(data[['indiv']][1]
+                                , head(data[['indiv']], -1))
   
-  # Start-stop for failures
-  data_eventos = data[indiv_failures==1]
-  setorder(data_eventos,indiv,-status,obs_time)
+  data[['aux_displaced_time_aux']] = c(0
+                               , head(data[['obs_time']], -1))
   
-  failure_data = lapply(indiv_failures,function(xx){
-    aux_data = data_eventos[indiv == xx,] # data.table way to filter lines
-    # Calculate elapsed time
-    aux_data$start = c(0, aux_data$obs_time[-length(aux_data$obs_time)])
-    aux_data$stop = aux_data$obs_time
-    aux_data$elapsed = aux_data$stop - aux_data$start
+  data[['aux_is_first_time_aux']] = as.integer(data[['aux_displaced_indiv_aux']] == data[['indiv']])
+  # data[, aux_is_first_time_aux := as.integer(aux_displaced_indiv_aux == indiv)]
+  
+  
+  data[,elapsed := obs_time - (aux_displaced_time_aux * aux_is_first_time_aux)]
+  
+  data[,c('aux_displaced_indiv_aux'
+          , 'aux_displaced_time_aux'
+          , 'aux_is_first_time_aux'
+          )] = NULL
+  
+  # remove no npositive elapsed times
+  data = data[elapsed > 0]
+  
+  # ------------------------------------------------- #
+  # limit ans skip the amount of events
+  # ------------------------------------------------- #
+  
+  if(limit > 0 | skip > 0){
     
-    # limit ans skip the amount of events
-    if(limit != 0 | skip != 0){
-      aux_data_susp = aux_data[aux_data$status == 0]
-      aux_data_events = aux_data[aux_data$status == 1]
-      # separetes events from suspensios and limits the ammount of events
-      if(skip != 0) aux_data_events = aux_data_events[(0:skip)*-1,]
-      if(limit != 0) aux_data_events = head(aux_data_events, limit)
-      
-      aux_data = rbind(aux_data_events, aux_data_susp)
+    # failure_number = data[,c('indiv', 'status')]
+    # failure_number = failure_number[,.(n_fail = sum(status)), , by=indiv]
+    # failure_number = failure_number[n_fail > 0]
+    # 
+    # df_failures = data[indiv %in% failure_number[['indiv']]]
+    # df_suspensions = data[!(indiv %in% failure_number[['indiv']])]
+    
+    # df_failures = split(df_failures, by = 'indiv')
+    # df_failures = df_failures %>%
+    #   llply(function(aux_df){
+    #     
+    #     # skip first n
+    #     # if(skip > 0) 
+    #     aux_df = tail(aux_df, -skip)
+    #     
+    #     # limit number of failures
+    #     # if(limit > 0)
+    #     aux_df = head(aux_df, limit)
+    #     })
+    
+    data[['aux_displaced_indiv_aux']] = c(data[['indiv']][1]
+                                          , head(data[['indiv']], -1))
+    
+    data[['aux_displaced_indiv_aux']] = data[['aux_displaced_indiv_aux']] == data[['indiv']]
+    data[['ith_failure']] = 0
+    data[['ith_failure']][[1]] = 1
+    
+    i = 1
+    while(i < nrow(data)){
+      i = i+1
+      # ith_failure = 0
+      data[['ith_failure']][i] = data[['ith_failure']][[i-1]]*data[['aux_displaced_indiv_aux']][i] + 1
+
     }
     
-    aux_data
-  })
-  
-  failure_data = do.call(rbind,failure_data)
-  data = rbind(failure_data,data_suspentions)
-  
-  data = data[elapsed > 0,] # remove times smaller or equal zero
-  data[,indiv_failures:=NULL] # remove no longer usefull column
-  
+    data = data[data$ith_failure > skip]
+    data = data[data$ith_failure <= skip+limit]
+    data[,c('aux_displaced_indiv_aux', 'ith_failure')] = NULL
+
+  }
   
   # Original names
   names(data)[names(data) == 'indiv'] = indiv_col

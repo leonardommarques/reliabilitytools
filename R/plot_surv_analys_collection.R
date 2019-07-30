@@ -11,6 +11,7 @@
 #' @param pred_times: Prediction times.
 #' @param time_scale: a number to devide the time so it rescales and the legend looks better
 #' @param ylim: Y axis limits
+#' @param re_estimate: Restimate probabilities fi \code{TRUE}
 #' @return A ggplot RM life curve of the best model.
 #' @details
 #' @export
@@ -26,6 +27,7 @@ plot_surv_analys_collection = function(surv_analys_collection
                                        , time_scale = 1
                                        , best_model = 1
                                        , add_ff_table = TRUE
+                                       , re_estimate = FALSE
 ){
   
   # -- preprocessing -- +
@@ -41,11 +43,23 @@ plot_surv_analys_collection = function(surv_analys_collection
                            from_Rfilter_to_title_str()
   )
   
-  
   # -- prediction data.frame -- +
   if(!is.null(surv_analys_collection$surv_predictions)){
-    predictions_df = surv_analys_collection$surv_predictions
-  } else { 
+    if((
+      conf_int & ('lcl'%in% names(surv_analys_collection$surv_predictions)) &
+      all(unique(surv_analys_collection$surv_predictions$time %in% pred_times))
+    )
+    ){
+      predictions_df = surv_analys_collection$surv_predictions
+      re_estimate = FALSE
+    } else { 
+      re_estimate = TRUE
+    }
+  } else {
+    re_estimate = TRUE
+  }
+  
+  if(re_estimate){
     predictions_df = surv_analys_collection$models %>%
       map(function(x){
         summary(x[[best_model]]
@@ -57,13 +71,16 @@ plot_surv_analys_collection = function(surv_analys_collection
       bind_rows(.id = 'month') %>%
       arrange(month)
   }
+  
+  
+  
   # --- tendecy plot --- +
   ggaux = plot_predict_multi_surv_reg(
     predictions_df
     , aux_title = aux_title
     , aux_subtitle = aux_subtitle
     , time_scale = time_scale
-    , col_legend = 'time' #'time (1,000km)'
+    , col_legend = paste0('time', ifelse(time_scale!=1, paste0('/',time_scale), '')) #'time (1,000km)'
     , ylim = ylim
     , ic_area = conf_int
   )

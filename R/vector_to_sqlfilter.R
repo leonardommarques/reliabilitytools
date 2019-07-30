@@ -23,7 +23,7 @@ vector_to_sqlfilter = function(field_name = ''
     
     return(paste0('\nand ', field_name, ' in (','"'
                   ,paste(strsplit(as.character(values)
-                                  , split = "[-;]")[[1]]
+                                  , split = "[;]")[[1]]
                          , collapse='", "')
                   ,'") ')
     )

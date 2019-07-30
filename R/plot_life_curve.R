@@ -91,7 +91,7 @@ plot_life_curve = function(m_flexsurvreg
   }
   
   
-  # -- print
+  # -- print -- #
   ggaux = ggaux + add_curve_flexsurvreg(m_flexsurvreg)
   
   # -- add all the other curves when the input is a list of models
@@ -99,10 +99,18 @@ plot_life_curve = function(m_flexsurvreg
     for(i in 1:length(m_flexsurvreg_old)){
       ggaux = ggaux + add_curve_flexsurvreg(m_flexsurvreg_old[[i]]) 		
     }
+    
     # -- reorder legend to best curve -- +
-    # dist_names = m_flexsurvreg_old %>% map('dlist') %>% map('name') %>% unlist()
-    # ggaux = ggaux + scale_color_discrete(breaks = dist_names)
+    ggaux = ggaux + 
+      scale_color_discrete(
+        breaks = m_flexsurvreg_old %>%
+          map('dlist') %>%
+          map('name') %>%
+          unlist() %>%
+          gsub('\\.quiet','',.)
+      )
   }
+  
   
   # gg_curve = ggaux
   return(ggaux)
